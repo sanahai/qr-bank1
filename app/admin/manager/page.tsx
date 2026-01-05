@@ -2,9 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Trash2, ExternalLink, RefreshCw, Store, Megaphone } from "lucide-react";
+import { Trash2, ExternalLink, RefreshCw, Store, Megaphone, Lock, LogIn } from "lucide-react";
+
+// 👇 [중요] 관리자 비밀번호 설정 (원하는 걸로 바꾸세요!)
+const ADMIN_PASSWORD = "237823";
 
 export default function SuperAdminPage() {
+  // --- 🔐 로그인 상태 관리 ---
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // 로그인 성공 여부
+  const [inputPassword, setInputPassword] = useState("");      // 입력한 비밀번호
+
+  // 기존 관리자 기능 상태들
   const [activeTab, setActiveTab] = useState("shops");
   const [shops, setShops] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
@@ -15,9 +23,21 @@ export default function SuperAdminPage() {
   const [adImage, setAdImage] = useState("");
   const [adLink, setAdLink] = useState("https://");
 
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
+  // 🔐 로그인 체크 함수
+  const handleLogin = () => {
+    if (inputPassword === ADMIN_PASSWORD) {
+      setIsAuthenticated(true); // 통과!
+      fetchData(); // 데이터 불러오기 시작
+    } else {
+      alert("비밀번호가 틀렸습니다. 다시 시도해주세요.");
+      setInputPassword("");
+    }
+  };
+
+  // 엔터키 쳐도 로그인 되게 하기
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleLogin();
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -31,14 +51,21 @@ export default function SuperAdminPage() {
     setLoading(false);
   };
 
+  // 탭 변경 시 데이터 다시 불러오기 (로그인 상태일 때만)
+  useEffect(() => {
+    if (isAuthenticated) fetchData();
+  }, [activeTab]);
+
+
+  // --- 기존 기능 함수들 ---
   const handleDelete = async (table: string, id: number) => {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
+    if (!confirm("정말 삭제하시겠습니까? (복구 불가)")) return;
     await supabase.from(table).delete().eq('id', id);
     fetchData();
   };
 
   const handleAddBanner = async () => {
-    if (!adTitle || !adLink || !adImage) return alert("내용을 입력해주세요.");
+    if (!adTitle || !adLink || !adImage) return alert("내용을 모두 입력해주세요.");
     const { error } = await supabase.from('banners').insert({
       title: adTitle,
       image_url: adImage,
@@ -47,21 +74,58 @@ export default function SuperAdminPage() {
     });
     if (error) alert("오류: " + error.message);
     else {
-      alert("광고 등록 완료!");
+      alert("광고가 정상적으로 등록되었습니다!");
       setAdTitle("");
       setAdImage("");
       fetchData();
     }
   };
 
+
+  // 🛑 [화면 1] 로그인 안 했을 때 보여줄 잠금 화면
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm text-center">
+          <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+            <Lock size={32} />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">관리자 접근 제한</h1>
+          <p className="text-sm text-gray-500 mb-6">관계자 외 접근을 금지합니다.<br/>비밀번호를 입력해주세요.</p>
+          
+          <input 
+            type="password" 
+            className="w-full border p-3 rounded-lg mb-4 text-center text-lg tracking-widest"
+            placeholder="비밀번호 입력"
+            value={inputPassword}
+            onChange={(e) => setInputPassword(e.target.value)}
+            onKeyDown={handleKeyDown}
+            autoFocus
+          />
+          
+          <button 
+            onClick={handleLogin}
+            className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800 flex justify-center items-center gap-2"
+          >
+            <LogIn size={18} /> 접속하기
+          </button>
+          
+          <a href="/" className="block mt-4 text-xs text-gray-400 underline">메인으로 돌아가기</a>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ [화면 2] 로그인 성공 시 보여줄 진짜 관리자 화면 (기존 코드)
   return (
     <div className="min-h-screen bg-gray-100 p-6 pb-20">
       <div className="max-w-4xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">👑 운영자 통합 관리</h1>
-          <a href="/" className="text-sm text-gray-500 underline">메인으로</a>
+          <button onClick={() => window.location.reload()} className="text-sm text-red-500 underline font-medium">로그아웃</button>
         </header>
 
+        {/* 탭 메뉴 */}
         <div className="flex gap-2 mb-6">
           <button onClick={() => setActiveTab("shops")} className={`flex-1 py-3 rounded-lg font-bold flex justify-center items-center gap-2 ${activeTab === 'shops' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600'}`}>
             <Store size={18}/> 가맹점 관리 ({shops.length})
@@ -71,6 +135,7 @@ export default function SuperAdminPage() {
           </button>
         </div>
 
+        {/* 1. 가맹점 관리 탭 */}
         {activeTab === "shops" && (
           <div className="bg-white rounded-xl shadow p-6">
             <div className="flex justify-between mb-4">
@@ -102,6 +167,7 @@ export default function SuperAdminPage() {
           </div>
         )}
 
+        {/* 2. 광고 관리 탭 */}
         {activeTab === "ads" && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow p-6">
