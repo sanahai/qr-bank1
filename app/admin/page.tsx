@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 // 👇 [관리자 비밀번호 설정]
-const ADMIN_PASSWORD = "1234"; 
+const ADMIN_PASSWORD = "237823"; 
 
 export default function AdminMainPage() {
   // --- 🔐 로그인 및 상태 관리 ---
