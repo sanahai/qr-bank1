@@ -214,36 +214,56 @@ export default function QRLandingPage({ params }: { params: { id: string } }) {
           </div>
         </section>
 
-        {/* 4. 중간 광고 배너 (현재는 고정, 나중에 DB 연결 가능) */}
-        <section className="px-5 py-4">
-          <a 
-            href="https://example.com" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="block bg-gradient-to-r from-red-50 to-pink-50 border border-red-100 rounded-2xl p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-20 h-20 bg-gray-200 rounded-xl flex-shrink-0 overflow-hidden">
-                <img 
-                  src="https://via.placeholder.com/600x150/FF6B6B/FFFFFF?text=Premium+Event" 
-                  alt="광고" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">HOT</span>
-                  <span className="text-xs text-gray-500">지역 제휴 혜택</span>
+{/* 🔥 실제 광고 배너 섹션 (카드형 레이아웃) */}
+        {banner && (
+          <section className="px-5 py-4">
+            <a 
+              href={banner.link_url} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="block bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-4">
+                {/* 1. 정사각형 썸네일 이미지 */}
+                <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100 bg-gray-50 relative">
+                  <img 
+                    src={banner.image_url} 
+                    alt="광고" 
+                    className="w-full h-full object-cover"
+                  />
+                  {/* 이미지 위 작게 'AD' 표시 */}
+                  <div className="absolute bottom-0 right-0 bg-black bg-opacity-30 text-white text-[9px] px-1.5 py-0.5 rounded-tl-lg">
+                    AD
+                  </div>
                 </div>
-                <p className="text-sm font-bold text-gray-800 leading-tight">
-                  동네 주민 특별 할인 쿠폰 받기
-                </p>
-              </div>
-              <ExternalLink size={16} className="text-gray-400" />
-            </div>
-          </a>
-        </section>
 
+                {/* 2. 우측 텍스트 영역 */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center h-20">
+                  {/* 상단 뱃지 */}
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      HOT
+                    </span>
+                    <span className="text-xs text-gray-400 truncate">
+                      사장님 추천 혜택
+                    </span>
+                  </div>
+                  
+                  {/* 메인 타이틀 (2줄 넘어가면 ... 처리) */}
+                  <p className="text-[15px] font-bold text-gray-800 leading-snug break-keep line-clamp-2">
+                    {banner.title}
+                  </p>
+                  
+                  {/* 하단 '자세히 보기' 유도 */}
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-xs text-blue-500 font-medium">자세히 보기</span>
+                    <ExternalLink size={12} className="text-blue-500" />
+                  </div>
+                </div>
+              </div>
+            </a>
+          </section>
+        )}
         {/* 5. 은행 앱 바로가기 */}
         <section className="px-6 py-4">
           <p className="text-sm font-medium text-gray-700 mb-4">자주 쓰는 은행 앱으로 바로 보내기</p>
