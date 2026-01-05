@@ -4,93 +4,35 @@ import React, { useState, useEffect } from "react";
 import { Copy, CheckCircle, ExternalLink, ShieldCheck, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase"; // Supabase 클라이언트 가져오기
 
-// --- [컴포넌트] 은행 앱 링크 목록 (디자인 그대로 유지) ---
-// --- [컴포넌트] 은행 앱 링크 목록 (실제 앱 실행 링크 적용) ---
+// --- [컴포넌트] 은행 앱 링크 목록 (요청하신 순서 및 전체 리스트 적용) ---
 const BankApps = () => {
   const banks = [
-    { 
-      name: "토스", 
-      color: "bg-blue-500", 
-      // 토스 송금 화면으로 바로 이동
-      url: "supertoss://send", 
-      fallback: "https://toss.im"
-    },
-    { 
-      name: "카카오뱅크", 
-      color: "bg-yellow-300 text-black", 
-      // 카카오뱅크 메인/이체 화면
-      url: "kakaobank://transfer/send", 
-      fallback: "https://www.kakaobank.com"
-    },
-    { 
-      name: "KB국민", 
-      color: "bg-gray-600", 
-      // KB스타뱅킹
-      url: "kbbank://", 
-      fallback: "https://www.kbstar.com"
-    },
-    { 
-      name: "신한", 
-      color: "bg-blue-600", 
-      // 신한 쏠(SOL)
-      url: "shinhan-sr-auth://", 
-      fallback: "https://www.shinhan.com"
-    },
-    { 
-      name: "우리", 
-      color: "bg-cyan-600", 
-      // 우리WON뱅킹
-      url: "wooribank://", 
-      fallback: "https://www.wooribank.com"
-    },
-    { 
-      name: "하나", 
-      color: "bg-green-600", 
-      // 하나원큐
-      url: "hana1q://", 
-      fallback: "https://www.kebhana.com"
-    },
-    { 
-      name: "NH농협", 
-      color: "bg-green-700", 
-      // NH스마트뱅킹
-      url: "nhapp://", 
-      fallback: "https://banking.nonghyup.com"
-    },
-    { 
-      name: "IBK기업", 
-      color: "bg-gray-700", 
-      // i-ONE Bank
-      url: "ibk-ionebank://", 
-      fallback: "https://www.ibk.co.kr"
-    },
-    { 
-      name: "케이뱅크", 
-      color: "bg-yellow-400 text-black", 
-      url: "kbank://", 
-      fallback: "https://www.kbanknow.com"
-    },
-    { 
-      name: "새마을", 
-      color: "bg-blue-700", 
-      // MG더뱅킹
-      url: "kfccbank://", 
-      fallback: "https://www.kfcc.co.kr"
-    },
-    { 
-      name: "신협", 
-      color: "bg-teal-600", 
-      // 신협ON뱅크
-      url: "cuplus://", 
-      fallback: "https://www.cu.co.kr"
-    },
-    { 
-      name: "우체국", 
-      color: "bg-red-600", 
-      // 우체국뱅킹
-      url: "epostbank://", 
-      fallback: "https://www.epostbank.go.kr"
-    },
+    // 1. 요청하신 상위 우선순위 은행 (8개)
+    { name: "토스", color: "bg-blue-500", url: "supertoss://send", fallback: "https://toss.im" },
+    { name: "카카오", color: "bg-yellow-300 text-black", url: "kakaobank://transfer/send", fallback: "https://www.kakaobank.com" },
+    { name: "신한", color: "bg-blue-600", url: "shinhan-sr-auth://", fallback: "https://www.shinhan.com" },
+    { name: "NH농협", color: "bg-green-600", url: "nhapp://", fallback: "https://banking.nonghyup.com" },
+    { name: "KB국민", color: "bg-gray-600", url: "kbbank://", fallback: "https://www.kbstar.com" },
+    { name: "IBK기업", color: "bg-blue-700", url: "ibk-ionebank://", fallback: "https://www.ibk.co.kr" },
+    { name: "하나", color: "bg-teal-500", url: "hana1q://", fallback: "https://www.kebhana.com" },
+    { name: "우리", color: "bg-cyan-600", url: "wooribank://", fallback: "https://www.wooribank.com" },
+
+    // 2. 인터넷 은행 (나머지)
+    { name: "케이뱅크", color: "bg-indigo-900", url: "kbank://", fallback: "https://www.kbanknow.com" },
+
+    // 3. 주요 시중은행 (나머지)
+    { name: "SC제일", color: "bg-green-700", url: "scbank://", fallback: "https://www.standardchartered.co.kr" },
+    { name: "씨티", color: "bg-blue-800", url: "citimobile://", fallback: "https://www.citibank.co.kr" },
+    { name: "KDB산업", color: "bg-blue-900", url: "kdbbank://", fallback: "https://www.kdb.co.kr" },
+    { name: "수협", color: "bg-teal-600", url: "suhyup-heybank://", fallback: "https://www.suhyup-bank.com" },
+
+    // 4. 지방은행 (가나다라 순 정렬 추천, 또는 임의)
+    { name: "iM뱅크", color: "bg-cyan-700", url: "imbank://", fallback: "https://www.dgb.co.kr" }, // 구 대구은행
+    { name: "부산", color: "bg-red-600", url: "busanbank://", fallback: "https://www.busanbank.co.kr" },
+    { name: "경남", color: "bg-red-500", url: "knbank://", fallback: "https://www.knbank.co.kr" },
+    { name: "광주", color: "bg-red-700", url: "kjbank://", fallback: "https://www.kjbank.com" },
+    { name: "전북", color: "bg-indigo-600", url: "jbbank://", fallback: "https://www.jbbank.co.kr" },
+    { name: "제주", color: "bg-blue-400", url: "jejubank://", fallback: "https://www.e-jejubank.com" },
   ];
 
   // 클릭 시 앱 실행 시도 -> 실패하면 스토어/홈페이지로 이동
@@ -101,7 +43,7 @@ const BankApps = () => {
     // 1. 앱 실행 시도
     window.location.href = bank.url;
 
-    // 2. 앱이 없어서 반응이 없으면 0.5초 뒤에 홈페이지(다운로드)로 이동
+    // 2. 앱이 반응 없으면 0.5초 뒤에 홈페이지(다운로드)로 이동
     setTimeout(() => {
       if (new Date().getTime() - start < 1000) {
         window.open(bank.fallback, '_blank');
@@ -118,10 +60,17 @@ const BankApps = () => {
           onClick={(e) => handleAppClick(e, bank)}
           className="flex flex-col items-center justify-center gap-1 group cursor-pointer"
         >
+          {/* 아이콘 박스 */}
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm ${bank.color} transition-transform active:scale-95`}>
-            <span className="text-sm font-bold">{bank.name.substring(0, 1)}</span>
+            {/* 이름의 앞 두 글자만 따서 아이콘처럼 표시 (예: SC, KDB, iM) */}
+            <span className="text-sm font-bold">
+              {bank.name.length > 2 && /^[a-zA-Z]/.test(bank.name) ? bank.name.substring(0, 2) : bank.name.substring(0, 1)}
+            </span>
           </div>
-          <span className="text-xs text-gray-500 text-center">{bank.name}</span>
+          {/* 하단 텍스트 이름 */}
+          <span className="text-[10px] text-gray-500 text-center break-keep leading-tight px-1">
+            {bank.name}
+          </span>
         </a>
       ))}
     </div>
