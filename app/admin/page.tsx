@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-// ❌ lucide-react 아이콘 import를 모두 제거했습니다. (배포 에러 원인 차단)
+
+// ❌ lucide-react 같은 외부 아이콘은 뺐습니다. (배포 에러 100% 방지)
 
 // 👇 [관리자 비밀번호 설정]
-const ADMIN_PASSWORD = "237823"; 
+const ADMIN_PASSWORD = "1234"; 
 
 export default function AdminMainPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -112,7 +113,7 @@ export default function AdminMainPage() {
     }
   };
 
-  // 로그인 화면
+  // --- 로그인 화면 ---
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-800 p-4 text-white">
@@ -128,7 +129,7 @@ export default function AdminMainPage() {
             onChange={(e) => setInputPassword(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           />
-          <button onClick={handleLogin} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl">
+          <button onClick={handleLogin} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800">
             접속하기
           </button>
         </div>
@@ -136,12 +137,12 @@ export default function AdminMainPage() {
     );
   }
 
-  // 메인 대시보드
+  // --- 메인 대시보드 ---
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row">
       {/* 사이드바 (PC) */}
-      <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col p-4">
-        <h1 className="text-xl font-bold mb-8 px-2">QR BANK</h1>
+      <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col p-6">
+        <h1 className="text-xl font-bold mb-8">QR BANK</h1>
         <nav className="flex-1 space-y-2">
           <button onClick={() => setActiveTab("dashboard")} className={`w-full text-left px-4 py-3 rounded-xl ${activeTab === 'dashboard' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800'}`}>
             🏠 대시보드 홈
@@ -153,7 +154,7 @@ export default function AdminMainPage() {
             📢 광고 배너
           </button>
         </nav>
-        <button onClick={() => window.location.reload()} className="text-sm text-gray-400 hover:text-white py-2">🔒 로그아웃</button>
+        <button onClick={() => window.location.reload()} className="text-sm text-gray-400 hover:text-white py-2 mt-4 text-left">🔒 로그아웃</button>
       </aside>
 
       {/* 모바일 헤더 */}
@@ -172,19 +173,19 @@ export default function AdminMainPage() {
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         {activeTab === "dashboard" && (
           <div className="max-w-4xl mx-auto space-y-6">
-            <h2 className="text-2xl font-bold">👋 안녕하세요!</h2>
+            <h2 className="text-2xl font-bold text-gray-800">👋 안녕하세요!</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-white p-6 rounded-2xl shadow-sm">
                 <div className="text-gray-500 text-sm">총 가맹점</div>
-                <div className="text-3xl font-black">{shops.length}개</div>
+                <div className="text-3xl font-black text-slate-900">{shops.length}개</div>
               </div>
               <div className="bg-white p-6 rounded-2xl shadow-sm">
                 <div className="text-gray-500 text-sm">운영 중인 광고</div>
                 <div className="text-3xl font-black text-red-500">{banners.length}개</div>
               </div>
-              <button onClick={() => { setActiveTab('shops'); openModal('create', null, 'shops'); }} className="bg-blue-600 text-white p-6 rounded-2xl shadow-lg text-left hover:bg-blue-700">
-                <div className="font-bold text-lg mb-1">+ 바로 등록</div>
-                <div className="text-blue-200 text-sm">가맹점 추가</div>
+              <button onClick={() => { setActiveTab('shops'); openModal('create', null, 'shops'); }} className="bg-blue-600 text-white p-6 rounded-2xl shadow-lg text-left hover:bg-blue-700 transition-transform active:scale-95">
+                <div className="font-bold text-lg mb-1">➕ 바로 등록</div>
+                <div className="text-blue-200 text-sm">가맹점 추가하기</div>
               </button>
             </div>
           </div>
@@ -193,20 +194,20 @@ export default function AdminMainPage() {
         {activeTab === "shops" && (
           <div className="max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">가맹점 관리</h2>
-              <button onClick={() => openModal("create")} className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold">+ 신규 등록</button>
+              <h2 className="text-2xl font-bold text-gray-800">가맹점 관리</h2>
+              <button onClick={() => openModal("create")} className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-slate-800">➕ 신규 등록</button>
             </div>
             <div className="bg-white rounded-xl shadow overflow-hidden">
               {shops.map((shop) => (
                 <div key={shop.id} className="p-4 border-b flex justify-between items-center hover:bg-gray-50">
                   <div>
-                    <div className="font-bold text-lg">{shop.shop_name}</div>
+                    <div className="font-bold text-lg text-gray-900">{shop.shop_name}</div>
                     <div className="text-sm text-gray-500">{shop.owner_name} | {shop.bank_name}</div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => openModal("edit", shop)} className="px-3 py-1 bg-gray-100 rounded text-sm font-bold">수정</button>
-                    <button onClick={() => handleDelete('shops', shop.id)} className="px-3 py-1 bg-red-50 text-red-500 rounded text-sm font-bold">삭제</button>
-                    <a href={`/q/${shop.id}`} target="_blank" className="px-3 py-1 bg-blue-50 text-blue-600 rounded text-sm font-bold">QR</a>
+                    <button onClick={() => openModal("edit", shop)} className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-bold hover:bg-gray-200">수정</button>
+                    <button onClick={() => handleDelete('shops', shop.id)} className="px-3 py-1 bg-red-50 text-red-500 rounded text-sm font-bold hover:bg-red-100">삭제</button>
+                    <a href={`/q/${shop.id}`} target="_blank" className="px-3 py-1 bg-blue-50 text-blue-600 rounded text-sm font-bold hover:bg-blue-100">QR</a>
                   </div>
                 </div>
               ))}
@@ -218,19 +219,19 @@ export default function AdminMainPage() {
         {activeTab === "ads" && (
           <div className="max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">광고 배너 관리</h2>
-              <button onClick={() => openModal("create")} className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold">+ 새 배너</button>
+              <h2 className="text-2xl font-bold text-gray-800">광고 배너 관리</h2>
+              <button onClick={() => openModal("create")} className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-red-600">➕ 새 배너</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {banners.map((banner) => (
-                <div key={banner.id} className="bg-white p-4 rounded-xl shadow border flex gap-4 items-center">
-                  <img src={banner.image_url} className="w-16 h-16 rounded bg-gray-100 object-cover" alt="배너"/>
+                <div key={banner.id} className="bg-white p-4 rounded-xl shadow border flex gap-4 items-center hover:shadow-md transition-shadow">
+                  <img src={banner.image_url} className="w-16 h-16 rounded bg-gray-100 object-cover border" alt="배너"/>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold truncate">{banner.title}</div>
+                    <div className="font-bold truncate text-gray-900">{banner.title}</div>
                     <div className="text-xs text-blue-500 truncate">{banner.link_url}</div>
                     <div className="mt-2 flex gap-2">
-                      <button onClick={() => openModal("edit", banner)} className="text-xs bg-gray-100 px-2 py-1 rounded font-bold">수정</button>
-                      <button onClick={() => handleDelete('banners', banner.id)} className="text-xs bg-red-50 text-red-500 px-2 py-1 rounded font-bold">삭제</button>
+                      <button onClick={() => openModal("edit", banner)} className="text-xs bg-gray-100 px-2 py-1 rounded font-bold text-gray-600 hover:bg-gray-200">수정</button>
+                      <button onClick={() => handleDelete('banners', banner.id)} className="text-xs bg-red-50 text-red-500 px-2 py-1 rounded font-bold hover:bg-red-100">삭제</button>
                     </div>
                   </div>
                 </div>
@@ -244,34 +245,54 @@ export default function AdminMainPage() {
       {/* 모달 팝업 */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">{editMode === "create" ? "✨ 새로 등록" : "🛠️ 정보 수정"}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400">닫기</button>
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 animate-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <h3 className="font-bold text-lg text-gray-900">{editMode === "create" ? "✨ 새로 등록" : "🛠️ 정보 수정"}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-black font-bold">✕ 닫기</button>
             </div>
             
             <div className="space-y-4">
               {(activeTab === "shops" || (activeTab === 'dashboard' && !targetId)) ? (
                 <>
-                  <input className="w-full border p-2 rounded" value={formData.shop_name} onChange={e=>setFormData({...formData, shop_name: e.target.value})} placeholder="매장 이름" />
-                  <input className="w-full border p-2 rounded" value={formData.owner_name} onChange={e=>setFormData({...formData, owner_name: e.target.value})} placeholder="대표자명" />
-                  <select className="w-full border p-2 rounded bg-white" value={formData.bank_name} onChange={e=>setFormData({...formData, bank_name: e.target.value})}>
-                    <option>KB국민</option><option>신한</option><option>토스</option><option>카카오</option><option>농협</option><option>우리</option><option>하나</option><option>기업</option>
-                  </select>
-                  <input className="w-full border p-2 rounded" value={formData.bank_account} onChange={e=>setFormData({...formData, bank_account: e.target.value})} placeholder="계좌번호" />
+                  <div>
+                     <label className="text-xs font-bold text-gray-500">매장 이름</label>
+                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.shop_name} onChange={e=>setFormData({...formData, shop_name: e.target.value})} placeholder="예: 카페 성수" />
+                  </div>
+                  <div>
+                     <label className="text-xs font-bold text-gray-500">대표자명</label>
+                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.owner_name} onChange={e=>setFormData({...formData, owner_name: e.target.value})} placeholder="예: 홍길동" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500">은행 / 계좌</label>
+                    <div className="flex gap-2 mt-1">
+                      <select className="w-1/3 border p-3 rounded-lg bg-white text-black" value={formData.bank_name} onChange={e=>setFormData({...formData, bank_name: e.target.value})}>
+                        <option>KB국민</option><option>신한</option><option>토스</option><option>카카오</option><option>농협</option><option>우리</option><option>하나</option><option>기업</option>
+                      </select>
+                      <input className="w-2/3 border p-3 rounded-lg text-black" value={formData.bank_account} onChange={e=>setFormData({...formData, bank_account: e.target.value})} placeholder="계좌번호" />
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
-                  <input className="w-full border p-2 rounded" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} placeholder="광고 문구" />
-                  <input className="w-full border p-2 rounded" value={formData.image_url} onChange={e=>setFormData({...formData, image_url: e.target.value})} placeholder="이미지 URL" />
-                  <input className="w-full border p-2 rounded" value={formData.link_url} onChange={e=>setFormData({...formData, link_url: e.target.value})} placeholder="연결 링크 URL" />
+                  <div>
+                     <label className="text-xs font-bold text-gray-500">광고 문구 (Title)</label>
+                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} placeholder="예: 주민 특별 할인" />
+                  </div>
+                  <div>
+                     <label className="text-xs font-bold text-gray-500">이미지 주소 (URL)</label>
+                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.image_url} onChange={e=>setFormData({...formData, image_url: e.target.value})} placeholder="Supabase 이미지 주소" />
+                  </div>
+                  <div>
+                     <label className="text-xs font-bold text-gray-500">연결 링크 (URL)</label>
+                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.link_url} onChange={e=>setFormData({...formData, link_url: e.target.value})} placeholder="https://..." />
+                  </div>
                 </>
               )}
             </div>
 
-            <div className="mt-6 flex gap-2">
-              <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 bg-gray-100 rounded-xl font-bold">취소</button>
-              <button onClick={handleSave} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold">저장하기</button>
+            <div className="mt-8 flex gap-3">
+              <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-gray-600 hover:bg-gray-200">취소</button>
+              <button onClick={handleSave} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 shadow-lg">저장하기</button>
             </div>
           </div>
         </div>
