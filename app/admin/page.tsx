@@ -3,21 +3,33 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
-// ❌ lucide-react 같은 외부 아이콘은 뺐습니다. (배포 에러 100% 방지)
-
 // 👇 [관리자 비밀번호 설정]
-const ADMIN_PASSWORD = "1234"; 
+const ADMIN_PASSWORD = "237823"; 
 
 export default function AdminMainPage() {
+  // --- 상태 관리 ---
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [inputPassword, setInputPassword] = useState("");
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'shops' | 'ads'
   
   const [shops, setShops] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // 통계 데이터 상태
+  const [stats, setStats] = useState({
+    today: 0,
+    week: 0,
+    month: 0,
+    total: 0,
+    monthlyBreakdown: {} as any
+  });
+
+  // 모달 상태 (수정용 / QR보기용)
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false); // QR 코드 전용 팝업
+  const [selectedQR, setSelectedQR] = useState<any>(null); // 선택된 QR 정보
+
   const [editMode, setEditMode] = useState<"create" | "edit">("create");
   const [targetId, setTargetId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
@@ -25,6 +37,7 @@ export default function AdminMainPage() {
     title: "", link_url: "", image_url: ""
   });
 
+  // 🔐 로그인
   const handleLogin = () => {
     if (inputPassword === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
@@ -34,13 +47,51 @@ export default function AdminMainPage() {
     }
   };
 
+  // 🔄 데이터 불러오기 및 통계 계산
   const fetchData = async () => {
     setLoading(true);
     const { data: shopData } = await supabase.from('shops').select('*').order('created_at', { ascending: false });
     const { data: bannerData } = await supabase.from('banners').select('*').order('created_at', { ascending: false });
     
-    setShops(shopData || []);
+    const shopList = shopData || [];
+    setShops(shopList);
     setBanners(bannerData || []);
+
+    // 📊 통계 계산 로직
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(now.getDate() - 7);
+    
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+    let todayCount = 0;
+    let weekCount = 0;
+    let monthCount = 0;
+    const monthlyData: any = {};
+
+    shopList.forEach((shop: any) => {
+      const created = shop.created_at;
+      // 1. 기간별 카운트
+      if (created >= todayStart) todayCount++;
+      if (created >= oneWeekAgo.toISOString()) weekCount++;
+      if (created >= thisMonthStart) monthCount++;
+
+      // 2. 월별 그룹화 (YYYY-MM)
+      const monthKey = created.substring(0, 7); // "2024-01" 형태
+      if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
+      monthlyData[monthKey]++;
+    });
+
+    setStats({
+      today: todayCount,
+      week: weekCount,
+      month: monthCount,
+      total: shopList.length,
+      monthlyBreakdown: monthlyData
+    });
+
     setLoading(false);
   };
 
@@ -48,6 +99,7 @@ export default function AdminMainPage() {
     if (isAuthenticated) fetchData();
   }, [activeTab, isAuthenticated]);
 
+  // 🗑️ 삭제
   const handleDelete = async (table: string, id: number) => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
     const { error } = await supabase.from(table).delete().eq('id', id);
@@ -58,6 +110,13 @@ export default function AdminMainPage() {
     }
   };
 
+  // 📷 QR 모달 열기
+  const openQRModal = (shop: any) => {
+    setSelectedQR(shop);
+    setIsQRModalOpen(true);
+  };
+
+  // 📝 등록/수정 모달 열기
   const openModal = (type: "create" | "edit", item?: any, category?: string) => {
     if(category === 'shops') setActiveTab('shops');
     if(category === 'ads') setActiveTab('ads');
@@ -81,6 +140,7 @@ export default function AdminMainPage() {
     }
   };
 
+  // 💾 저장
   const handleSave = async () => {
     const currentTab = activeTab === 'dashboard' ? 'shops' : activeTab;
     const table = currentTab === "shops" ? "shops" : "banners";
@@ -120,7 +180,7 @@ export default function AdminMainPage() {
         <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center text-black">
           <div className="text-4xl mb-4">🔒</div>
           <h1 className="text-2xl font-bold mb-2">QR BANK Admin</h1>
-          <p className="text-sm text-gray-500 mb-6">관리자 전용 대시보드</p>
+          <p className="text-sm text-gray-500 mb-6">통합 관리자 시스템</p>
           <input 
             type="password" 
             className="w-full bg-gray-50 border p-4 rounded-xl text-center text-lg mb-4 text-black"
@@ -129,7 +189,7 @@ export default function AdminMainPage() {
             onChange={(e) => setInputPassword(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           />
-          <button onClick={handleLogin} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800">
+          <button onClick={handleLogin} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700">
             접속하기
           </button>
         </div>
@@ -140,12 +200,12 @@ export default function AdminMainPage() {
   // --- 메인 대시보드 ---
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row">
-      {/* 사이드바 (PC) */}
+      {/* 사이드바 */}
       <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col p-6">
         <h1 className="text-xl font-bold mb-8">QR BANK</h1>
         <nav className="flex-1 space-y-2">
           <button onClick={() => setActiveTab("dashboard")} className={`w-full text-left px-4 py-3 rounded-xl ${activeTab === 'dashboard' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800'}`}>
-            🏠 대시보드 홈
+            📊 통계 대시보드
           </button>
           <button onClick={() => setActiveTab("shops")} className={`w-full text-left px-4 py-3 rounded-xl ${activeTab === 'shops' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800'}`}>
             🏪 가맹점 관리
@@ -157,57 +217,97 @@ export default function AdminMainPage() {
         <button onClick={() => window.location.reload()} className="text-sm text-gray-400 hover:text-white py-2 mt-4 text-left">🔒 로그아웃</button>
       </aside>
 
-      {/* 모바일 헤더 */}
-      <div className="md:hidden bg-white p-4 border-b flex justify-between items-center">
-        <h1 className="font-bold">관리자 모드</h1>
-        <button onClick={() => window.location.reload()} className="text-sm text-red-500">로그아웃</button>
-      </div>
-
       {/* 모바일 탭 */}
-      <div className="md:hidden flex bg-white border-b">
-        <button onClick={() => setActiveTab("dashboard")} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'dashboard' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>홈</button>
+      <div className="md:hidden flex bg-white border-b sticky top-0 z-10">
+        <button onClick={() => setActiveTab("dashboard")} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'dashboard' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>통계</button>
         <button onClick={() => setActiveTab("shops")} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'shops' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>가맹점</button>
         <button onClick={() => setActiveTab("ads")} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'ads' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>광고</button>
       </div>
 
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        
+        {/* --- 📊 대시보드 (통계) 탭 --- */}
         {activeTab === "dashboard" && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">👋 안녕하세요!</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-white p-6 rounded-2xl shadow-sm">
-                <div className="text-gray-500 text-sm">총 가맹점</div>
-                <div className="text-3xl font-black text-slate-900">{shops.length}개</div>
+          <div className="max-w-5xl mx-auto space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800">📊 가맹점 현황판</h2>
+            
+            {/* 통계 카드 4개 */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100">
+                <div className="text-gray-500 text-xs font-bold mb-1">오늘 신규</div>
+                <div className="text-3xl font-black text-blue-600">{stats.today}건</div>
               </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm">
-                <div className="text-gray-500 text-sm">운영 중인 광고</div>
-                <div className="text-3xl font-black text-red-500">{banners.length}개</div>
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-green-100">
+                <div className="text-gray-500 text-xs font-bold mb-1">이번 주</div>
+                <div className="text-3xl font-black text-green-600">{stats.week}건</div>
               </div>
-              <button onClick={() => { setActiveTab('shops'); openModal('create', null, 'shops'); }} className="bg-blue-600 text-white p-6 rounded-2xl shadow-lg text-left hover:bg-blue-700 transition-transform active:scale-95">
-                <div className="font-bold text-lg mb-1">➕ 바로 등록</div>
-                <div className="text-blue-200 text-sm">가맹점 추가하기</div>
-              </button>
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-purple-100">
+                <div className="text-gray-500 text-xs font-bold mb-1">이번 달</div>
+                <div className="text-3xl font-black text-purple-600">{stats.month}건</div>
+              </div>
+              <div className="bg-slate-800 p-5 rounded-2xl shadow-sm text-white">
+                <div className="text-gray-400 text-xs font-bold mb-1">총 누적 가맹점</div>
+                <div className="text-3xl font-black">{stats.total}개</div>
+              </div>
             </div>
+
+            {/* 월별 가입 추이 */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border">
+              <h3 className="font-bold text-lg mb-4 text-gray-800">📈 월별 가입 추이</h3>
+              <div className="space-y-3">
+                {Object.keys(stats.monthlyBreakdown).sort().reverse().map((month) => (
+                  <div key={month} className="flex items-center gap-4">
+                    <div className="w-20 font-bold text-gray-500">{month}</div>
+                    <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                      <div 
+                        className="bg-blue-500 h-full rounded-full transition-all duration-1000" 
+                        style={{ width: `${(stats.monthlyBreakdown[month] / stats.total) * 100}%` }}
+                      ></div>
+                    </div>
+                    <div className="w-12 text-right font-bold text-gray-800">{stats.monthlyBreakdown[month]}건</div>
+                  </div>
+                ))}
+                {Object.keys(stats.monthlyBreakdown).length === 0 && <div className="text-gray-400 text-sm">데이터가 없습니다.</div>}
+              </div>
+            </div>
+
+             {/* 바로가기 버튼 */}
+             <button onClick={() => setActiveTab('shops')} className="w-full py-4 bg-white border border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-50">
+                상세 리스트 관리하러 가기 👉
+             </button>
           </div>
         )}
 
+        {/* --- 🏪 가맹점 관리 탭 --- */}
         {activeTab === "shops" && (
           <div className="max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">가맹점 관리</h2>
+              <h2 className="text-2xl font-bold text-gray-800">가맹점 리스트</h2>
               <button onClick={() => openModal("create")} className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-slate-800">➕ 신규 등록</button>
             </div>
+            
             <div className="bg-white rounded-xl shadow overflow-hidden">
               {shops.map((shop) => (
-                <div key={shop.id} className="p-4 border-b flex justify-between items-center hover:bg-gray-50">
-                  <div>
-                    <div className="font-bold text-lg text-gray-900">{shop.shop_name}</div>
-                    <div className="text-sm text-gray-500">{shop.owner_name} | {shop.bank_name}</div>
+                <div key={shop.id} className="p-4 border-b flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-50 gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-lg text-gray-900">{shop.shop_name}</span>
+                      <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{shop.created_at?.substring(0,10)}</span>
+                    </div>
+                    <div className="text-sm text-gray-500">{shop.owner_name} | {shop.bank_name} {shop.bank_account}</div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => openModal("edit", shop)} className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-bold hover:bg-gray-200">수정</button>
-                    <button onClick={() => handleDelete('shops', shop.id)} className="px-3 py-1 bg-red-50 text-red-500 rounded text-sm font-bold hover:bg-red-100">삭제</button>
-                    <a href={`/q/${shop.id}`} target="_blank" className="px-3 py-1 bg-blue-50 text-blue-600 rounded text-sm font-bold hover:bg-blue-100">QR</a>
+                  
+                  <div className="flex gap-2 w-full md:w-auto">
+                    {/* QR 보기 버튼 (새로 추가됨!) */}
+                    <button onClick={() => openQRModal(shop)} className="flex-1 md:flex-none px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow hover:bg-blue-700">
+                      📷 QR생성
+                    </button>
+                    <button onClick={() => openModal("edit", shop)} className="flex-1 md:flex-none px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-200">
+                      수정
+                    </button>
+                    <button onClick={() => handleDelete('shops', shop.id)} className="flex-1 md:flex-none px-3 py-2 bg-red-50 text-red-500 rounded-lg text-sm font-bold hover:bg-red-100">
+                      삭제
+                    </button>
                   </div>
                 </div>
               ))}
@@ -216,6 +316,7 @@ export default function AdminMainPage() {
           </div>
         )}
 
+        {/* --- 📢 광고 배너 관리 탭 --- */}
         {activeTab === "ads" && (
           <div className="max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -242,7 +343,7 @@ export default function AdminMainPage() {
         )}
       </main>
 
-      {/* 모달 팝업 */}
+      {/* 🛠️ 등록/수정 모달 */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 animate-in zoom-in duration-200">
@@ -254,38 +355,20 @@ export default function AdminMainPage() {
             <div className="space-y-4">
               {(activeTab === "shops" || (activeTab === 'dashboard' && !targetId)) ? (
                 <>
-                  <div>
-                     <label className="text-xs font-bold text-gray-500">매장 이름</label>
-                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.shop_name} onChange={e=>setFormData({...formData, shop_name: e.target.value})} placeholder="예: 카페 성수" />
-                  </div>
-                  <div>
-                     <label className="text-xs font-bold text-gray-500">대표자명</label>
-                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.owner_name} onChange={e=>setFormData({...formData, owner_name: e.target.value})} placeholder="예: 홍길동" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-500">은행 / 계좌</label>
-                    <div className="flex gap-2 mt-1">
-                      <select className="w-1/3 border p-3 rounded-lg bg-white text-black" value={formData.bank_name} onChange={e=>setFormData({...formData, bank_name: e.target.value})}>
-                        <option>KB국민</option><option>신한</option><option>토스</option><option>카카오</option><option>농협</option><option>우리</option><option>하나</option><option>기업</option>
-                      </select>
-                      <input className="w-2/3 border p-3 rounded-lg text-black" value={formData.bank_account} onChange={e=>setFormData({...formData, bank_account: e.target.value})} placeholder="계좌번호" />
-                    </div>
+                  <input className="w-full border p-3 rounded-lg text-black" value={formData.shop_name} onChange={e=>setFormData({...formData, shop_name: e.target.value})} placeholder="매장 이름 (예: 카페 성수)" />
+                  <input className="w-full border p-3 rounded-lg text-black" value={formData.owner_name} onChange={e=>setFormData({...formData, owner_name: e.target.value})} placeholder="대표자명" />
+                  <div className="flex gap-2">
+                    <select className="w-1/3 border p-3 rounded-lg bg-white text-black" value={formData.bank_name} onChange={e=>setFormData({...formData, bank_name: e.target.value})}>
+                      <option>KB국민</option><option>신한</option><option>토스</option><option>카카오</option><option>농협</option><option>우리</option><option>하나</option><option>기업</option>
+                    </select>
+                    <input className="w-2/3 border p-3 rounded-lg text-black" value={formData.bank_account} onChange={e=>setFormData({...formData, bank_account: e.target.value})} placeholder="계좌번호" />
                   </div>
                 </>
               ) : (
                 <>
-                  <div>
-                     <label className="text-xs font-bold text-gray-500">광고 문구 (Title)</label>
-                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} placeholder="예: 주민 특별 할인" />
-                  </div>
-                  <div>
-                     <label className="text-xs font-bold text-gray-500">이미지 주소 (URL)</label>
-                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.image_url} onChange={e=>setFormData({...formData, image_url: e.target.value})} placeholder="Supabase 이미지 주소" />
-                  </div>
-                  <div>
-                     <label className="text-xs font-bold text-gray-500">연결 링크 (URL)</label>
-                     <input className="w-full border p-3 rounded-lg mt-1 text-black" value={formData.link_url} onChange={e=>setFormData({...formData, link_url: e.target.value})} placeholder="https://..." />
-                  </div>
+                  <input className="w-full border p-3 rounded-lg text-black" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} placeholder="광고 문구" />
+                  <input className="w-full border p-3 rounded-lg text-black" value={formData.image_url} onChange={e=>setFormData({...formData, image_url: e.target.value})} placeholder="이미지 주소 (URL)" />
+                  <input className="w-full border p-3 rounded-lg text-black" value={formData.link_url} onChange={e=>setFormData({...formData, link_url: e.target.value})} placeholder="연결 링크 URL" />
                 </>
               )}
             </div>
@@ -297,6 +380,46 @@ export default function AdminMainPage() {
           </div>
         </div>
       )}
+
+      {/* 📷 QR 생성/다운로드 모달 (새로 추가됨!) */}
+      {isQRModalOpen && selectedQR && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setIsQRModalOpen(false)}>
+          <div className="bg-white p-8 rounded-3xl max-w-sm w-full text-center relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setIsQRModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-black">✕</button>
+            
+            <h3 className="text-xl font-bold mb-1">{selectedQR.shop_name}</h3>
+            <p className="text-gray-500 text-sm mb-6">QR코드를 스캔하거나 저장하세요</p>
+            
+            <div className="bg-gray-50 p-4 rounded-2xl border mb-6 inline-block">
+              {/* 외부 QR API 사용 (설치 불필요) */}
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://qrbank.kr/q/${selectedQR.id}`} 
+                alt="QR Code" 
+                className="w-48 h-48 mix-blend-multiply"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <a 
+                href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=https://qrbank.kr/q/${selectedQR.id}`} 
+                download="qr-code.png"
+                target="_blank"
+                className="py-3 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-1"
+              >
+                💾 이미지 저장
+              </a>
+              <a 
+                href={`/q/${selectedQR.id}`} 
+                target="_blank"
+                className="py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-1"
+              >
+                🔗 페이지 이동
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
