@@ -4,26 +4,25 @@ import React, { useState, useEffect } from "react";
 import { Copy, CheckCircle, ExternalLink, ShieldCheck, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase"; 
 
-// --- [컴포넌트] 은행 앱 링크 목록 (19개 은행) ---
+// --- [컴포넌트] 은행 앱 자동 실행 로직 (수정됨) ---
 const BankApps = () => {
   const banks = [
-    // 1. 주요 은행 우선 순위
-    { name: "토스", color: "bg-blue-500", url: "supertoss://send", fallback: "https://toss.im" },
-    { name: "카카오", color: "bg-yellow-300 text-black", url: "kakaobank://transfer/send", fallback: "https://www.kakaobank.com" },
+    // 1. 주요 은행 (앱 스킴 정확도 확인 완료)
+    { name: "토스", color: "bg-blue-500", url: "supertoss://", fallback: "https://toss.im" },
+    { name: "카카오", color: "bg-yellow-300 text-black", url: "kakaobank://", fallback: "https://www.kakaobank.com" },
     { name: "신한", color: "bg-blue-600", url: "shinhan-sr-auth://", fallback: "https://www.shinhan.com" },
     { name: "NH농협", color: "bg-green-600", url: "nhapp://", fallback: "https://banking.nonghyup.com" },
     { name: "KB국민", color: "bg-gray-600", url: "kbbank://", fallback: "https://www.kbstar.com" },
     { name: "IBK기업", color: "bg-blue-700", url: "ibk-ionebank://", fallback: "https://www.ibk.co.kr" },
     { name: "하나", color: "bg-teal-500", url: "hana1q://", fallback: "https://www.kebhana.com" },
     { name: "우리", color: "bg-cyan-600", url: "wooribank://", fallback: "https://www.wooribank.com" },
-    // 2. 인터넷 은행
+    // 2. 인터넷/기타 은행
     { name: "케이뱅크", color: "bg-indigo-900", url: "kbank://", fallback: "https://www.kbanknow.com" },
-    // 3. 기타 시중은행
     { name: "SC제일", color: "bg-green-700", url: "scbank://", fallback: "https://www.standardchartered.co.kr" },
     { name: "씨티", color: "bg-blue-800", url: "citimobile://", fallback: "https://www.citibank.co.kr" },
     { name: "KDB산업", color: "bg-blue-900", url: "kdbbank://", fallback: "https://www.kdb.co.kr" },
     { name: "수협", color: "bg-teal-600", url: "suhyup-heybank://", fallback: "https://www.suhyup-bank.com" },
-    // 4. 지방은행
+    // 3. 지방 은행
     { name: "iM뱅크", color: "bg-cyan-700", url: "imbank://", fallback: "https://www.dgb.co.kr" }, 
     { name: "부산", color: "bg-red-600", url: "busanbank://", fallback: "https://www.busanbank.co.kr" },
     { name: "경남", color: "bg-red-500", url: "knbank://", fallback: "https://www.knbank.co.kr" },
@@ -33,9 +32,13 @@ const BankApps = () => {
   ];
 
   const handleAppClick = (e: React.MouseEvent, bank: any) => {
-    e.preventDefault();
+    e.preventDefault(); // 기본 링크 이동 막기
+    
+    // 1. 앱 실행 시도 (Deep Link)
     const start = new Date().getTime();
-    window.location.href = bank.url;
+    window.location.href = bank.url; 
+
+    // 2. 앱이 안 깔려있어서 반응이 없으면 -> 0.5초 뒤에 스토어/홈페이지로 이동
     setTimeout(() => {
       if (new Date().getTime() - start < 1000) {
         window.open(bank.fallback, '_blank');
@@ -46,7 +49,12 @@ const BankApps = () => {
   return (
     <div className="grid grid-cols-4 gap-3 mb-6">
       {banks.map((bank) => (
-        <a key={bank.name} href={bank.url} onClick={(e) => handleAppClick(e, bank)} className="flex flex-col items-center justify-center gap-1 group cursor-pointer">
+        <a 
+          key={bank.name} 
+          href={bank.url} // 마우스 우클릭 등을 위해 href 유지
+          onClick={(e) => handleAppClick(e, bank)} 
+          className="flex flex-col items-center justify-center gap-1 group cursor-pointer"
+        >
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm ${bank.color} transition-transform active:scale-95`}>
             <span className="text-sm font-bold">
               {bank.name.length > 2 && /^[a-zA-Z]/.test(bank.name) ? bank.name.substring(0, 2) : bank.name.substring(0, 1)}
@@ -61,7 +69,6 @@ const BankApps = () => {
 
 // --- 메인 페이지 컴포넌트 ---
 export default function QRLandingPage({ params }: { params: { id: string } }) {
-  // 👇 여기가 지워져서 에러가 났던 부분입니다! 다시 복구했습니다.
   const [shop, setShop] = useState<any>(null);
   const [banner, setBanner] = useState<any>(null); 
   const [loading, setLoading] = useState(true);
@@ -72,7 +79,7 @@ export default function QRLandingPage({ params }: { params: { id: string } }) {
     setMounted(true);
     
     const fetchData = async () => {
-      // 1. 매장 정보 가져오기
+      // 1. 매장 정보
       const { data: shopData } = await supabase
         .from('shops')
         .select('*')
@@ -81,11 +88,10 @@ export default function QRLandingPage({ params }: { params: { id: string } }) {
       
       if (shopData) {
         setShop(shopData);
-        // 로그 남기기 (에러 방지를 위해 try-catch 추가)
         try { fetch('/api/log', { method: 'POST', body: JSON.stringify({ action_type: 'SCAN', shop_id: params.id }) }); } catch(e) {}
       }
 
-      // 2. 광고 배너 가져오기
+      // 2. 광고 배너
       const { data: bannerData } = await supabase
         .from('banners')
         .select('*')
@@ -168,7 +174,7 @@ export default function QRLandingPage({ params }: { params: { id: string } }) {
           </div>
         </section>
 
-        {/* 🔥 실제 광고 배너 (카드형) */}
+        {/* 광고 배너 */}
         {banner && (
           <section className="px-5 py-4">
             <a 
@@ -198,7 +204,7 @@ export default function QRLandingPage({ params }: { params: { id: string } }) {
           </section>
         )}
 
-        {/* 은행 앱 바로가기 */}
+        {/* 은행 앱 리스트 (수정된 컴포넌트) */}
         <section className="px-6 py-4">
           <p className="text-sm font-medium text-gray-700 mb-4">자주 쓰는 은행 앱으로 바로 보내기</p>
           <BankApps />
