@@ -4,10 +4,21 @@ import React, { useState, useEffect } from "react";
 import { Copy, CheckCircle, ExternalLink, ShieldCheck, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase"; 
 
-// --- [컴포넌트] 은행 앱 자동 실행 로직 (수정됨) ---
+// --- [이름 마스킹 함수] 이 함수가 이름을 가려줍니다 ---
+const maskName = (name: string) => {
+  if (!name) return "";
+  if (name.length <= 2) {
+    // 2글자 (이길 -> 이*)
+    return name[0] + "*";
+  }
+  // 3글자 이상 (이동길 -> 이*길, 남궁민수 -> 남*민수)
+  return name[0] + "*" + name.substring(2);
+};
+
+// --- [컴포넌트] 은행 앱 강제 실행 로직 (Deep Link) ---
 const BankApps = () => {
   const banks = [
-    // 1. 주요 은행 (앱 스킴 정확도 확인 완료)
+    // 주요 은행
     { name: "토스", color: "bg-blue-500", url: "supertoss://", fallback: "https://toss.im" },
     { name: "카카오", color: "bg-yellow-300 text-black", url: "kakaobank://", fallback: "https://www.kakaobank.com" },
     { name: "신한", color: "bg-blue-600", url: "shinhan-sr-auth://", fallback: "https://www.shinhan.com" },
@@ -16,13 +27,13 @@ const BankApps = () => {
     { name: "IBK기업", color: "bg-blue-700", url: "ibk-ionebank://", fallback: "https://www.ibk.co.kr" },
     { name: "하나", color: "bg-teal-500", url: "hana1q://", fallback: "https://www.kebhana.com" },
     { name: "우리", color: "bg-cyan-600", url: "wooribank://", fallback: "https://www.wooribank.com" },
-    // 2. 인터넷/기타 은행
+    // 인터넷/기타
     { name: "케이뱅크", color: "bg-indigo-900", url: "kbank://", fallback: "https://www.kbanknow.com" },
     { name: "SC제일", color: "bg-green-700", url: "scbank://", fallback: "https://www.standardchartered.co.kr" },
     { name: "씨티", color: "bg-blue-800", url: "citimobile://", fallback: "https://www.citibank.co.kr" },
     { name: "KDB산업", color: "bg-blue-900", url: "kdbbank://", fallback: "https://www.kdb.co.kr" },
     { name: "수협", color: "bg-teal-600", url: "suhyup-heybank://", fallback: "https://www.suhyup-bank.com" },
-    // 3. 지방 은행
+    // 지방은행
     { name: "iM뱅크", color: "bg-cyan-700", url: "imbank://", fallback: "https://www.dgb.co.kr" }, 
     { name: "부산", color: "bg-red-600", url: "busanbank://", fallback: "https://www.busanbank.co.kr" },
     { name: "경남", color: "bg-red-500", url: "knbank://", fallback: "https://www.knbank.co.kr" },
@@ -32,13 +43,9 @@ const BankApps = () => {
   ];
 
   const handleAppClick = (e: React.MouseEvent, bank: any) => {
-    e.preventDefault(); // 기본 링크 이동 막기
-    
-    // 1. 앱 실행 시도 (Deep Link)
+    e.preventDefault();
     const start = new Date().getTime();
     window.location.href = bank.url; 
-
-    // 2. 앱이 안 깔려있어서 반응이 없으면 -> 0.5초 뒤에 스토어/홈페이지로 이동
     setTimeout(() => {
       if (new Date().getTime() - start < 1000) {
         window.open(bank.fallback, '_blank');
@@ -51,7 +58,7 @@ const BankApps = () => {
       {banks.map((bank) => (
         <a 
           key={bank.name} 
-          href={bank.url} // 마우스 우클릭 등을 위해 href 유지
+          href={bank.url} 
           onClick={(e) => handleAppClick(e, bank)} 
           className="flex flex-col items-center justify-center gap-1 group cursor-pointer"
         >
@@ -67,7 +74,7 @@ const BankApps = () => {
   );
 };
 
-// --- 메인 페이지 컴포넌트 ---
+// --- 메인 페이지 ---
 export default function QRLandingPage({ params }: { params: { id: string } }) {
   const [shop, setShop] = useState<any>(null);
   const [banner, setBanner] = useState<any>(null); 
@@ -79,7 +86,6 @@ export default function QRLandingPage({ params }: { params: { id: string } }) {
     setMounted(true);
     
     const fetchData = async () => {
-      // 1. 매장 정보
       const { data: shopData } = await supabase
         .from('shops')
         .select('*')
@@ -91,7 +97,6 @@ export default function QRLandingPage({ params }: { params: { id: string } }) {
         try { fetch('/api/log', { method: 'POST', body: JSON.stringify({ action_type: 'SCAN', shop_id: params.id }) }); } catch(e) {}
       }
 
-      // 2. 광고 배너
       const { data: bannerData } = await supabase
         .from('banners')
         .select('*')
@@ -147,7 +152,8 @@ export default function QRLandingPage({ params }: { params: { id: string } }) {
             <div className="flex items-center justify-center gap-2 mb-3">
                 <span className="font-bold text-gray-700 text-lg">{shop.bank_name}</span>
                 <span className="text-gray-400">|</span>
-                <span className="font-bold text-gray-700 text-lg">{shop.owner_name}</span>
+                {/* 👇 여기서 이름을 마스킹해서 보여줍니다 */}
+                <span className="font-bold text-gray-700 text-lg">{maskName(shop.owner_name)}</span>
             </div>
             
             <div className="text-3xl font-black text-gray-900 tracking-wider mb-6 break-all">
@@ -204,7 +210,7 @@ export default function QRLandingPage({ params }: { params: { id: string } }) {
           </section>
         )}
 
-        {/* 은행 앱 리스트 (수정된 컴포넌트) */}
+        {/* 은행 앱 리스트 */}
         <section className="px-6 py-4">
           <p className="text-sm font-medium text-gray-700 mb-4">자주 쓰는 은행 앱으로 바로 보내기</p>
           <BankApps />
