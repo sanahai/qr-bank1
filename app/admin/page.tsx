@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { 
   Trash2, Edit, ExternalLink, RefreshCw, Store, Megaphone, 
-  Lock, LogIn, X, Save, LayoutDashboard, LogOut, ChevronRight 
-} from "lucide-react";
+  Lock, LogIn, Save, Plus 
+} from "lucide-react"; 
+// 👆 에러 원인이 될 수 있는 LayoutDashboard, LogOut, X, ChevronRight 등을 제거했습니다.
 
 // 👇 [관리자 비밀번호 설정]
 const ADMIN_PASSWORD = "237823"; 
@@ -69,7 +70,6 @@ export default function AdminMainPage() {
 
   // 📝 모달 열기
   const openModal = (type: "create" | "edit", item?: any, category?: string) => {
-    // 만약 대시보드에서 바로 등록 버튼을 눌렀다면 해당 탭으로 이동 후 모달 열기
     if(category === 'shops') setActiveTab('shops');
     if(category === 'ads') setActiveTab('ads');
 
@@ -94,7 +94,6 @@ export default function AdminMainPage() {
 
   // 💾 저장 기능
   const handleSave = async () => {
-    // 현재 탭이 대시보드라면 기본적으로 가맹점 등록으로 처리하거나 에러 방지
     const currentTab = activeTab === 'dashboard' ? 'shops' : activeTab;
     const table = currentTab === "shops" ? "shops" : "banners";
     
@@ -127,7 +126,7 @@ export default function AdminMainPage() {
   };
 
   // ------------------------------------------------------------------
-  // 🛑 [화면 1] 로그인 대기 화면 (Main Gate)
+  // 🛑 [화면 1] 로그인 대기 화면
   // ------------------------------------------------------------------
   if (!isAuthenticated) {
     return (
@@ -159,9 +158,6 @@ export default function AdminMainPage() {
               <LogIn size={20} /> 접속하기
             </button>
           </div>
-          <div className="mt-6 text-xs text-gray-400">
-            Authorized Personnel Only
-          </div>
         </div>
       </div>
     );
@@ -180,7 +176,7 @@ export default function AdminMainPage() {
         </div>
         <nav className="flex-1 px-4 space-y-2">
           <button onClick={() => setActiveTab("dashboard")} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 shadow-lg shadow-blue-900/50 font-bold' : 'text-slate-400 hover:bg-slate-800'}`}>
-            <LayoutDashboard size={20} /> 대시보드 홈
+            <Store size={20} /> 대시보드 홈
           </button>
           <button onClick={() => setActiveTab("shops")} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'shops' ? 'bg-blue-600 shadow-lg shadow-blue-900/50 font-bold' : 'text-slate-400 hover:bg-slate-800'}`}>
             <Store size={20} /> 가맹점 관리
@@ -191,7 +187,7 @@ export default function AdminMainPage() {
         </nav>
         <div className="p-4">
           <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-white py-2 text-sm">
-            <LogOut size={16} /> 로그아웃
+            <Lock size={16} /> 로그아웃
           </button>
         </div>
       </aside>
@@ -230,7 +226,9 @@ export default function AdminMainPage() {
                 </div>
                 <div className="bg-blue-600 p-6 rounded-2xl shadow-lg text-white flex flex-col justify-center items-start cursor-pointer hover:bg-blue-700 transition-colors"
                      onClick={() => { setActiveTab('shops'); openModal('create', null, 'shops'); }}>
-                  <div className="font-bold text-lg mb-1 flex items-center gap-2">+ 바로 등록</div>
+                  <div className="font-bold text-lg mb-1 flex items-center gap-2">
+                    <Plus size={20} /> 바로 등록
+                  </div>
                   <div className="text-blue-200 text-sm">새 가맹점 추가하기</div>
                 </div>
               </div>
@@ -240,7 +238,7 @@ export default function AdminMainPage() {
                 <div className="p-5 border-b flex justify-between items-center">
                   <h3 className="font-bold text-gray-800">최근 등록된 가맹점</h3>
                   <button onClick={() => setActiveTab("shops")} className="text-xs text-blue-500 flex items-center gap-1 hover:underline">
-                    전체보기 <ChevronRight size={12}/>
+                    전체보기 &gt;
                   </button>
                 </div>
                 <div className="divide-y">
@@ -347,7 +345,7 @@ export default function AdminMainPage() {
               <h3 className="font-bold text-lg text-gray-900">
                 {editMode === "create" ? "✨ 새로 등록" : "🛠️ 정보 수정"}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24}/></button>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">닫기</button>
             </div>
             
             <div className="p-6 space-y-4">
