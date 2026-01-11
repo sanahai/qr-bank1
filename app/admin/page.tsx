@@ -409,7 +409,7 @@ export default function AdminMainPage() {
         )}
       </main>
 
-      {/* 🛠️ 모달 */}
+{/* 🛠️ 등록/수정 모달 */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
@@ -423,8 +423,33 @@ export default function AdminMainPage() {
                   <input className="w-full border p-3 rounded-lg text-black" value={formData.shop_name} onChange={e=>setFormData({...formData, shop_name: e.target.value})} placeholder="매장 이름" />
                   <input className="w-full border p-3 rounded-lg text-black" value={formData.owner_name} onChange={e=>setFormData({...formData, owner_name: e.target.value})} placeholder="대표자명" />
                   <div className="flex gap-2">
+                    {/* 🔥 여기가 수정된 부분입니다! 19개 은행 선택 가능 */}
                     <select className="w-1/3 border p-3 rounded-lg bg-white text-black" value={formData.bank_name} onChange={e=>setFormData({...formData, bank_name: e.target.value})}>
-                      <option>KB국민</option><option>신한</option><option>토스</option><option>카카오</option><option>농협</option><option>우리</option><option>하나</option><option>기업</option>
+                      <optgroup label="주요 은행">
+                        <option value="KB국민">KB국민</option>
+                        <option value="신한">신한</option>
+                        <option value="하나">하나</option>
+                        <option value="우리">우리</option>
+                        <option value="NH농협">NH농협</option>
+                        <option value="IBK기업">IBK기업</option>
+                      </optgroup>
+                      <optgroup label="인터넷 은행">
+                        <option value="토스">토스</option>
+                        <option value="카카오">카카오</option>
+                        <option value="케이뱅크">케이뱅크</option>
+                      </optgroup>
+                      <optgroup label="기타/지방 은행">
+                        <option value="SC제일">SC제일</option>
+                        <option value="씨티">씨티</option>
+                        <option value="KDB산업">KDB산업</option>
+                        <option value="수협">수협</option>
+                        <option value="iM뱅크">iM뱅크(대구)</option>
+                        <option value="부산">부산</option>
+                        <option value="경남">경남</option>
+                        <option value="광주">광주</option>
+                        <option value="전북">전북</option>
+                        <option value="제주">제주</option>
+                      </optgroup>
                     </select>
                     <input className="w-2/3 border p-3 rounded-lg text-black" value={formData.bank_account} onChange={e=>setFormData({...formData, bank_account: e.target.value})} placeholder="계좌번호" />
                   </div>
@@ -445,7 +470,7 @@ export default function AdminMainPage() {
         </div>
       )}
 
-      {/* 📷 QR 생성/다운로드 모달 (파일명 지정 다운로드 기능) */}
+      {/* 📷 QR 생성/다운로드 모달 */}
       {isQRModalOpen && selectedQR && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setIsQRModalOpen(false)}>
           <div className="bg-white p-8 rounded-3xl max-w-sm w-full text-center relative" onClick={e => e.stopPropagation()}>
@@ -456,20 +481,12 @@ export default function AdminMainPage() {
               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://qrbank.kr/q/${selectedQR.id}`} alt="QR Code" className="w-48 h-48 mix-blend-multiply"/>
             </div>
             <div className="grid grid-cols-1 gap-3">
-              <button 
-                onClick={() => downloadQRImage(selectedQR)}
-                className="py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow flex items-center justify-center gap-2"
-              >
-                💾 이미지 파일 다운로드
-              </button>
-              <a href={`/q/${selectedQR.id}`} target="_blank" className="py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200">
-                🔗 페이지 확인하기
-              </a>
+              <button onClick={() => downloadQRImage(selectedQR)} className="py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow flex items-center justify-center gap-2">💾 이미지 파일 다운로드</button>
+              <a href={`/q/${selectedQR.id}`} target="_blank" className="py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200">🔗 페이지 확인하기</a>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
