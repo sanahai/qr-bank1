@@ -39,7 +39,7 @@ export default function Home() {
       </div>
       
       <footer className="absolute bottom-6 text-xs text-blue-200/60">
-        © 2024 LOCAL PAY QR Team
+        © 2025 qrbank.kr
       </footer>
     </main>
   );
