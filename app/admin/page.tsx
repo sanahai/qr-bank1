@@ -425,20 +425,16 @@ export default function AdminMainPage() {
                   <div className="flex gap-2">
                     {/* 🔥 여기가 수정된 부분입니다! 19개 은행 선택 가능 */}
                     <select className="w-1/3 border p-3 rounded-lg bg-white text-black" value={formData.bank_name} onChange={e=>setFormData({...formData, bank_name: e.target.value})}>
-                      <optgroup label="주요 은행">
+                      <optgroup label="주요 은행명">
+                        <option value="토스">토스</option>
+                        <option value="카카오">카카오</option>
+                        <option value="케이뱅크">케이뱅크</option>
                         <option value="KB국민">KB국민</option>
                         <option value="신한">신한</option>
                         <option value="하나">하나</option>
                         <option value="우리">우리</option>
                         <option value="NH농협">NH농협</option>
                         <option value="IBK기업">IBK기업</option>
-                      </optgroup>
-                      <optgroup label="인터넷 은행">
-                        <option value="토스">토스</option>
-                        <option value="카카오">카카오</option>
-                        <option value="케이뱅크">케이뱅크</option>
-                      </optgroup>
-                      <optgroup label="기타/지방 은행">
                         <option value="SC제일">SC제일</option>
                         <option value="씨티">씨티</option>
                         <option value="KDB산업">KDB산업</option>
