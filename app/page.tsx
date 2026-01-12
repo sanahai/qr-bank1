@@ -143,10 +143,10 @@ return (
       <footer className="bg-gray-900 text-gray-400 py-8 px-6 text-center text-xs">
         <p className="mb-3 font-bold text-white text-base">QR BANK</p>
         <div className="space-y-1">
-          <p>사업자등록번호 : 123-45-67890 | 대표 : 홍길동</p>
-          <p>서울특별시 강남구 테헤란로 123</p>
+          <p>사업자등록번호 : 326-58-00636 | 대표 : 이동길</p>
+          <p>인천광역시 미추홀구 석정로140번길 29</p>
         </div>
-        <p className="mt-6 opacity-50">© 2026 QR BANK. All rights reserved.</p>
+        <p className="mt-6 opacity-50">© 2025 QR BANK. All rights reserved.</p>
       </footer>
 
 
