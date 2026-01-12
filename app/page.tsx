@@ -18,19 +18,23 @@ export default function Home() {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  return (
+return (
     <div className="min-h-screen bg-white">
-      {/* --- 1. 네비게이션 (수정됨) --- */}
+      {/* --- 1. 네비게이션 --- */}
       <nav className="flex items-center justify-between px-6 py-3 border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="text-xl font-black tracking-tighter">QR BANK</div>
+        {/* 👇 로고에 홈 링크(/) 연결 완료 */}
+        <Link href="/" className="text-xl font-black tracking-tighter hover:opacity-70 transition-opacity cursor-pointer">
+          QR BANK
+        </Link>
+        
         <div>
-          {/* 가맹점 관리자 버튼 삭제, 운영자 로그인만 유지 */}
           <Link href="/admin" className="text-sm font-bold text-gray-500 hover:text-black py-2 px-2 transition-colors">
             운영자 로그인
           </Link>
         </div>
       </nav>
 
+      
       {/* --- 2. 히어로 섹션 (수정됨: 간격 축소 & 버튼 변경) --- */}
       <header className="px-6 pt-10 pb-16 text-center max-w-4xl mx-auto">
         <div className="inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold mb-4">
