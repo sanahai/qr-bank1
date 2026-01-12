@@ -137,9 +137,9 @@ export default function Home() {
       {/* --- 푸터 --- */}
       <footer className="bg-gray-900 text-gray-400 py-12 px-6 text-center text-sm">
         <p className="mb-4 font-bold text-white text-lg">QR BANK</p>
-        <p>사업자등록번호 : 123-45-67890 | 대표 : 홍길동</p>
-        <p>서울특별시 강남구 테헤란로 123</p>
-        <p className="mt-8 opacity-50">© 2024 QR BANK. All rights reserved.</p>
+        <p>사업자등록번호 : 326-58-00636 | 대표 : 이동길</p>
+        <p>인천광역시 미추홀구 석정로140번길 29</p>
+        <p className="mt-8 opacity-50">© 2025 QR BANK. All rights reserved.</p>
       </footer>
 
 
