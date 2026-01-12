@@ -4,36 +4,36 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 // 👇 [관리자 비밀번호 설정]
-const ADMIN_PASSWORD = "237823"; 
+const ADMIN_PASSWORD = "1234"; 
 
 export default function AdminMainPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [inputPassword, setInputPassword] = useState("");
-  const [activeTab, setActiveTab] = useState("dashboard"); // dashboard | applications | shops | ads
+  const [activeTab, setActiveTab] = useState("dashboard");
   
   const [shops, setShops] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
-  const [applications, setApplications] = useState<any[]>([]); // 신청서 목록
+  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 검색 & 페이징
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; 
 
   const [stats, setStats] = useState({ today: 0, week: 0, month: 0, total: 0, monthlyBreakdown: {} as any });
 
-  // 모달 상태
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [selectedQR, setSelectedQR] = useState<any>(null);
 
   const [editMode, setEditMode] = useState<"create" | "edit">("create");
   const [targetId, setTargetId] = useState<number | null>(null);
-  const [applicationId, setApplicationId] = useState<number | null>(null); // 승인 처리 중인 신청서 ID
+  const [applicationId, setApplicationId] = useState<number | null>(null);
 
+  // 📝 폼 데이터 (연락처, 이메일 추가)
   const [formData, setFormData] = useState({
     shop_name: "", owner_name: "", bank_name: "KB국민", bank_account: "",
+    contact: "", email: "", // 👈 추가된 항목
     title: "", link_url: "", image_url: ""
   });
 
@@ -48,17 +48,14 @@ export default function AdminMainPage() {
 
   const fetchData = async () => {
     setLoading(true);
-    // 데이터 불러오기
     const { data: shopData } = await supabase.from('shops').select('*').order('created_at', { ascending: false });
     const { data: bannerData } = await supabase.from('banners').select('*').order('created_at', { ascending: false });
     const { data: appData } = await supabase.from('applications').select('*').order('created_at', { ascending: false });
     
-    const shopList = shopData || [];
-    setShops(shopList);
+    setShops(shopData || []);
     setBanners(bannerData || []);
     setApplications(appData || []);
 
-    // 통계 계산
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const oneWeekAgo = new Date(); oneWeekAgo.setDate(now.getDate() - 7);
@@ -67,7 +64,7 @@ export default function AdminMainPage() {
     let todayCount = 0, weekCount = 0, monthCount = 0;
     const monthlyData: any = {};
 
-    shopList.forEach((shop: any) => {
+    (shopData || []).forEach((shop: any) => {
       const created = shop.created_at;
       if (created >= todayStart) todayCount++;
       if (created >= oneWeekAgo.toISOString()) weekCount++;
@@ -77,7 +74,7 @@ export default function AdminMainPage() {
       monthlyData[monthKey]++;
     });
 
-    setStats({ today: todayCount, week: weekCount, month: monthCount, total: shopList.length, monthlyBreakdown: monthlyData });
+    setStats({ today: todayCount, week: weekCount, month: monthCount, total: (shopData || []).length, monthlyBreakdown: monthlyData });
     setLoading(false);
   };
 
@@ -111,12 +108,10 @@ export default function AdminMainPage() {
 
   const openQRModal = (shop: any) => { setSelectedQR(shop); setIsQRModalOpen(true); };
 
-  // 📝 모달 열기 (일반 등록/수정 + 신청서 승인)
   const openModal = (type: "create" | "edit", item?: any, category?: string) => {
-    // 탭 자동 이동
     if(category === 'shops') setActiveTab('shops');
     if(category === 'ads') setActiveTab('ads');
-    if(category === 'approve') setActiveTab('shops'); // 신청 승인 시 가맹점 탭으로 이동
+    if(category === 'approve') setActiveTab('shops');
 
     setEditMode(type);
     setIsModalOpen(true);
@@ -127,16 +122,17 @@ export default function AdminMainPage() {
       setFormData({
         shop_name: item.shop_name || "", owner_name: item.owner_name || "",
         bank_name: item.bank_name || "KB국민", bank_account: item.bank_account || "",
+        contact: item.contact || "", email: item.email || "", // 👈 기존 정보 불러오기
         title: item.title || "", link_url: item.link_url || "", image_url: item.image_url || ""
       });
     } 
-    // 🔥 신청서 승인 모드 (신규 등록이지만 데이터 채움)
     else if (category === 'approve' && item) {
       setTargetId(null);
-      setApplicationId(item.id); // 승인할 신청서 ID 저장
+      setApplicationId(item.id);
       setFormData({
         shop_name: item.shop_name || "", owner_name: item.owner_name || "",
         bank_name: item.bank_name || "KB국민", bank_account: item.bank_account || "",
+        contact: item.contact || "", email: "", // 👈 신청서 연락처 자동 입력
         title: "", link_url: "", image_url: ""
       });
     }
@@ -145,12 +141,12 @@ export default function AdminMainPage() {
       setApplicationId(null);
       setFormData({
         shop_name: "", owner_name: "", bank_name: "KB국민", bank_account: "",
+        contact: "", email: "",
         title: "", link_url: "", image_url: ""
       });
     }
   };
 
-  // 💾 저장 (가맹점 등록/수정)
   const handleSave = async () => {
     const currentTab = activeTab === 'dashboard' || activeTab === 'applications' ? 'shops' : activeTab;
     const table = currentTab === "shops" ? "shops" : "banners";
@@ -160,7 +156,8 @@ export default function AdminMainPage() {
       if (!formData.shop_name) return alert("매장명을 입력해주세요.");
       payload = {
         shop_name: formData.shop_name, owner_name: formData.owner_name,
-        bank_name: formData.bank_name, bank_account: formData.bank_account
+        bank_name: formData.bank_name, bank_account: formData.bank_account,
+        contact: formData.contact, email: formData.email // 👈 DB에 같이 저장
       };
     } else {
       if (!formData.title) return alert("광고 제목을 입력해주세요.");
@@ -170,24 +167,16 @@ export default function AdminMainPage() {
       };
     }
 
-    // 1. 데이터 저장 (Insert or Update)
     const { error } = editMode === "create" 
       ? await supabase.from(table).insert(payload)
       : await supabase.from(table).update(payload).eq('id', targetId);
 
-    if (error) {
-      alert("저장 실패: " + error.message);
-      return;
-    }
-
-    // 2. 만약 '신청서 승인' 작업이었다면, 신청서 목록에서 삭제
-    if (applicationId) {
-      await supabase.from('applications').delete().eq('id', applicationId);
-    }
+    if (error) { alert("저장 실패: " + error.message); return; }
+    if (applicationId) { await supabase.from('applications').delete().eq('id', applicationId); }
 
     alert("완료되었습니다!");
     setIsModalOpen(false);
-    fetchData(); // 새로고침
+    fetchData();
   };
 
   const filteredShops = shops.filter((shop) => 
@@ -195,7 +184,6 @@ export default function AdminMainPage() {
     shop.owner_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     shop.bank_account.includes(searchTerm)
   );
-
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentShops = filteredShops.slice(indexOfFirstItem, indexOfLastItem);
@@ -221,20 +209,16 @@ export default function AdminMainPage() {
         <h1 className="text-xl font-bold mb-8">QR BANK</h1>
         <nav className="flex-1 space-y-2">
           <button onClick={() => setActiveTab("dashboard")} className={`w-full text-left px-4 py-3 rounded-xl ${activeTab === 'dashboard' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800'}`}>📊 통계 대시보드</button>
-          
-          {/* 🔥 신규 탭: 신청 관리 */}
           <button onClick={() => setActiveTab("applications")} className={`w-full text-left px-4 py-3 rounded-xl flex justify-between items-center ${activeTab === 'applications' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800'}`}>
             <span>📩 신청 관리</span>
             {applications.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{applications.length}</span>}
           </button>
-          
           <button onClick={() => setActiveTab("shops")} className={`w-full text-left px-4 py-3 rounded-xl ${activeTab === 'shops' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800'}`}>🏪 가맹점 관리</button>
           <button onClick={() => setActiveTab("ads")} className={`w-full text-left px-4 py-3 rounded-xl ${activeTab === 'ads' ? 'bg-blue-600 font-bold' : 'hover:bg-slate-800'}`}>📢 광고 배너</button>
         </nav>
         <button onClick={() => window.location.reload()} className="text-sm text-gray-400 hover:text-white py-2 mt-4 text-left">🔒 로그아웃</button>
       </aside>
 
-      {/* 모바일 탭 */}
       <div className="md:hidden flex bg-white border-b sticky top-0 z-10 overflow-x-auto">
         <button onClick={() => setActiveTab("dashboard")} className={`flex-1 py-3 px-4 text-sm font-bold whitespace-nowrap ${activeTab === 'dashboard' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>통계</button>
         <button onClick={() => setActiveTab("applications")} className={`flex-1 py-3 px-4 text-sm font-bold whitespace-nowrap ${activeTab === 'applications' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>신청({applications.length})</button>
@@ -251,13 +235,11 @@ export default function AdminMainPage() {
               <div className="bg-white p-5 rounded-2xl shadow-sm border border-purple-100"><div className="text-gray-500 text-xs font-bold mb-1">이번 달</div><div className="text-3xl font-black text-purple-600">{stats.month}건</div></div>
               <div className="bg-slate-800 p-5 rounded-2xl shadow-sm text-white"><div className="text-gray-400 text-xs font-bold mb-1">총 누적 가맹점</div><div className="text-3xl font-black">{stats.total}개</div></div>
             </div>
-             <button onClick={() => setActiveTab('applications')} className="w-full py-4 bg-white border border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-50">
-               {applications.length > 0 ? `📩 대기 중인 신청서가 ${applications.length}건 있습니다! 확인하기 👉` : "신청 내역 확인하기 👉"}
-             </button>
+             <button onClick={() => setActiveTab('applications')} className="w-full py-4 bg-white border border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-50">{applications.length > 0 ? `📩 대기 중인 신청서가 ${applications.length}건 있습니다! 확인하기 👉` : "신청 내역 확인하기 👉"}</button>
           </div>
         )}
 
-        {/* 🔥 [신청 관리] 탭 */}
+        {/* 📩 신청 관리 탭: 연락처 잘 보이게 수정됨 */}
         {activeTab === "applications" && (
           <div className="max-w-5xl mx-auto">
              <h2 className="text-2xl font-bold text-gray-800 mb-6">📩 서비스 신청 내역 ({applications.length})</h2>
@@ -266,16 +248,16 @@ export default function AdminMainPage() {
                  <div key={app.id} className="bg-white p-5 rounded-xl shadow border border-blue-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                       <div className="font-bold text-lg text-gray-900">{app.shop_name} <span className="text-xs text-gray-400 font-normal ml-2">{app.created_at?.substring(0,10)} 신청</span></div>
-                      <div className="text-sm text-gray-600 mb-1">{app.owner_name} | {app.contact || "연락처 없음"}</div>
-                      <div className="text-sm text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded inline-block">{app.bank_name} {app.bank_account}</div>
+                      <div className="text-sm text-gray-600 mb-1">
+                        <span className="font-bold">{app.owner_name}</span> 
+                        <span className="mx-2 text-gray-300">|</span> 
+                        <span className="text-blue-600">📞 {app.contact}</span> {/* 👈 연락처 강조 */}
+                      </div>
+                      <div className="text-sm text-gray-500">{app.bank_name} {app.bank_account}</div>
                     </div>
                     <div className="flex gap-2 w-full md:w-auto">
-                      <button onClick={() => openModal("create", app, "approve")} className="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg font-bold shadow hover:bg-blue-700">
-                        ✅ 검토 및 등록
-                      </button>
-                      <button onClick={() => handleDelete('applications', app.id)} className="flex-1 md:flex-none px-4 py-2 bg-white border border-red-200 text-red-500 rounded-lg font-bold hover:bg-red-50">
-                        거절(삭제)
-                      </button>
+                      <button onClick={() => openModal("create", app, "approve")} className="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg font-bold shadow hover:bg-blue-700">✅ 검토 및 등록</button>
+                      <button onClick={() => handleDelete('applications', app.id)} className="flex-1 md:flex-none px-4 py-2 bg-white border border-red-200 text-red-500 rounded-lg font-bold hover:bg-red-50">거절(삭제)</button>
                     </div>
                  </div>
                ))}
@@ -284,6 +266,7 @@ export default function AdminMainPage() {
           </div>
         )}
 
+        {/* 🏪 가맹점 관리 탭: 연락처/이메일 표시 추가 */}
         {activeTab === "shops" && (
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -295,14 +278,22 @@ export default function AdminMainPage() {
             </div>
             <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
                <div className="hidden md:flex bg-gray-50 border-b p-3 text-xs font-bold text-gray-500">
-                  <div className="w-16 text-center">No</div><div className="flex-1">매장 정보</div><div className="w-40">대표자 / 가입일</div><div className="w-64 text-right pr-4">관리 기능</div>
+                  <div className="w-16 text-center">No</div><div className="flex-1">매장 정보</div><div className="w-48">연락처 / 가입일</div><div className="w-64 text-right pr-4">관리 기능</div>
                </div>
                <div className="divide-y">
                 {currentShops.map((shop, index) => (
                   <div key={shop.id} className="p-4 flex flex-col md:flex-row items-start md:items-center hover:bg-blue-50 transition-colors gap-3">
                     <div className="hidden md:block w-16 text-center text-gray-400 font-bold">{filteredShops.length - ((currentPage - 1) * itemsPerPage) - index}</div>
-                    <div className="flex-1"><div className="font-bold text-lg text-gray-900">{shop.shop_name}</div><div className="text-sm text-gray-500 md:hidden">{shop.owner_name}</div><div className="text-sm text-blue-600 font-medium">{shop.bank_name} {shop.bank_account}</div></div>
-                    <div className="hidden md:block w-40 text-sm text-gray-600"><div className="font-bold">{shop.owner_name}</div><div className="text-xs text-gray-400">{shop.created_at?.substring(0,10)}</div></div>
+                    <div className="flex-1">
+                        <div className="font-bold text-lg text-gray-900">{shop.shop_name} <span className="text-xs font-normal text-gray-500">({shop.owner_name})</span></div>
+                        <div className="text-sm text-blue-600 font-medium">{shop.bank_name} {shop.bank_account}</div>
+                        {/* 👈 이메일이 있으면 보여줌 */}
+                        {shop.email && <div className="text-xs text-gray-400 mt-1">✉️ {shop.email}</div>}
+                    </div>
+                    <div className="hidden md:block w-48 text-sm text-gray-600">
+                        <div className="font-bold">📞 {shop.contact || "-"}</div> {/* 👈 연락처 표시 */}
+                        <div className="text-xs text-gray-400">{shop.created_at?.substring(0,10)}</div>
+                    </div>
                     <div className="flex gap-2 w-full md:w-auto justify-end"><button onClick={() => openQRModal(shop)} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-bold hover:bg-blue-700 shadow-sm">QR</button><button onClick={() => openModal("edit", shop, 'shops')} className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded text-sm font-bold hover:bg-gray-50">수정</button><button onClick={() => handleDelete('shops', shop.id)} className="px-3 py-1.5 bg-white border border-red-200 text-red-500 rounded text-sm font-bold hover:bg-red-50">삭제</button></div>
                   </div>
                 ))}
@@ -342,6 +333,9 @@ export default function AdminMainPage() {
                     </select>
                     <input className="w-2/3 border p-3 rounded-lg text-black" value={formData.bank_account} onChange={e=>setFormData({...formData, bank_account: e.target.value})} placeholder="계좌번호" />
                   </div>
+                  {/* 👇 연락처 및 이메일 입력칸 추가 */}
+                  <input className="w-full border p-3 rounded-lg text-black" value={formData.contact} onChange={e=>setFormData({...formData, contact: e.target.value})} placeholder="연락처 (필수)" />
+                  <input className="w-full border p-3 rounded-lg text-black" value={formData.email} onChange={e=>setFormData({...formData, email: e.target.value})} placeholder="이메일 (선택)" />
                 </>
               ) : (
                 <>
@@ -356,7 +350,7 @@ export default function AdminMainPage() {
         </div>
       )}
 
-      {/* QR 모달 */}
+      {/* QR 모달 (기존 동일) */}
       {isQRModalOpen && selectedQR && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setIsQRModalOpen(false)}>
           <div className="bg-white p-8 rounded-3xl max-w-sm w-full text-center relative" onClick={e => e.stopPropagation()}>
